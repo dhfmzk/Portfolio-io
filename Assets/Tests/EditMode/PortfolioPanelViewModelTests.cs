@@ -43,6 +43,21 @@ public class PortfolioPanelViewModelTests
         Assert.AreEqual("Unity / C# / WebGL", viewModel.StackSummary);
     }
 
+    [Test]
+    public void LinkSummaryJoinsReadableLinkLabels()
+    {
+        var data = UnityEngine.ScriptableObject.CreateInstance<PortfolioExhibitData>();
+        data.Links = new[]
+        {
+            new PortfolioLink("GitHub", "https://github.com/dhfmzk/Portfolio-io"),
+            new PortfolioLink("Playable Build", "https://dhfmzk.github.io/Portfolio-io/")
+        };
+
+        var viewModel = PortfolioPanelViewModel.FromData(data);
+
+        Assert.AreEqual("GitHub / Playable Build", viewModel.LinkSummary);
+    }
+
     private static PortfolioExhibitData CreateExhibit()
     {
         var data = UnityEngine.ScriptableObject.CreateInstance<PortfolioExhibitData>();

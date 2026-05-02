@@ -14,6 +14,12 @@ namespace Portfolio
             data = exhibitData;
         }
 
+        public void SetHighlight(GameObject highlightObject)
+        {
+            highlight = highlightObject;
+            SetHighlighted(false);
+        }
+
         public void SetHighlighted(bool highlighted)
         {
             if (highlight != null)

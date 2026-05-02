@@ -13,6 +13,7 @@ namespace UI
         [SerializeField] private TextMeshProUGUI subtitleText;
         [SerializeField] private TextMeshProUGUI bodyText;
         [SerializeField] private TextMeshProUGUI stackText;
+        [SerializeField] private TextMeshProUGUI linksText;
         [SerializeField] private Button closeButton;
 
         public bool IsOpen => root != null && root.activeSelf;
@@ -40,6 +41,7 @@ namespace UI
             SetText(subtitleText, viewModel.Subtitle);
             SetText(bodyText, viewModel.Body);
             SetText(stackText, viewModel.StackSummary);
+            SetText(linksText, string.IsNullOrWhiteSpace(viewModel.LinkSummary) ? string.Empty : $"Links: {viewModel.LinkSummary}");
 
             if (root != null)
             {
@@ -61,7 +63,8 @@ namespace UI
             TextMeshProUGUI title,
             TextMeshProUGUI subtitle,
             TextMeshProUGUI body,
-            TextMeshProUGUI stack)
+            TextMeshProUGUI stack,
+            TextMeshProUGUI links = null)
         {
             root = panelRoot;
             categoryText = category;
@@ -69,6 +72,7 @@ namespace UI
             subtitleText = subtitle;
             bodyText = body;
             stackText = stack;
+            linksText = links;
             Hide();
         }
 

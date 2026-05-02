@@ -13,6 +13,9 @@ namespace Portfolio
         public readonly string[] StackTags;
         public readonly PortfolioLink[] Links;
         public string StackSummary => StackTags.Length == 0 ? string.Empty : string.Join(" / ", StackTags);
+        public string LinkSummary => Links.Length == 0
+            ? string.Empty
+            : string.Join(" / ", Links.Select(ResolveLinkLabel).Where(label => !string.IsNullOrWhiteSpace(label)));
 
         private PortfolioPanelViewModel(
             string id,
@@ -59,6 +62,16 @@ namespace Portfolio
                 data.Body ?? string.Empty,
                 stackTags,
                 links);
+        }
+
+        private static string ResolveLinkLabel(PortfolioLink link)
+        {
+            if (link == null)
+            {
+                return string.Empty;
+            }
+
+            return string.IsNullOrWhiteSpace(link.Label) ? link.Url ?? string.Empty : link.Label;
         }
     }
 }

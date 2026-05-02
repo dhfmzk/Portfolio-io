@@ -19,6 +19,7 @@ namespace Portfolio
         public bool IsOpen { get; private set; }
         public event Action<PortfolioExhibitData> ExhibitOpened;
         public event Action ExhibitClosed;
+        public event Action<InteractableExhibit> FocusedExhibitChanged;
 
         public void Configure(
             Transform playerTransform,
@@ -47,7 +48,7 @@ namespace Portfolio
                 .Where(exhibit => Vector3.Distance(exhibit.transform.position, origin) <= interactionRadius)
                 .ToArray();
 
-            _current = SelectNearest(origin, exhibits);
+            SetCurrent(SelectNearest(origin, exhibits));
             foreach (var exhibit in FindObjectsOfType<InteractableExhibit>())
             {
                 exhibit.SetHighlighted(exhibit == _current);
@@ -76,6 +77,17 @@ namespace Portfolio
             IsOpen = false;
             playerController?.SetMovementPaused(false);
             ExhibitClosed?.Invoke();
+        }
+
+        private void SetCurrent(InteractableExhibit exhibit)
+        {
+            if (_current == exhibit)
+            {
+                return;
+            }
+
+            _current = exhibit;
+            FocusedExhibitChanged?.Invoke(_current);
         }
 
         public static InteractableExhibit SelectNearest(Vector3 origin, IEnumerable<InteractableExhibit> exhibits)
