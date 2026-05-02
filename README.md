@@ -6,6 +6,7 @@
 ## ✨ What's Here?
 - Turn my portfolio into a playable game, why? 🤔 
 - Check out my weird or fun stuff 🤣
+- MVP target: move through a WebGL gallery, inspect exhibits with `E`, and publish through GitHub Pages.
 
 
 <br>
@@ -25,3 +26,8 @@ It’s a ghost town. Only the builder’s still here, putting in the work.
 
 ## 🔮 What’s Next?  
 - Working build LOL 🎯 
+
+<br>
+
+## 🛠 Build & Deploy
+WebGL builds are published from `docs/` through GitHub Pages. See [DEPLOYMENT.md](DEPLOYMENT.md) for the local Unity build command and Pages setup.
