@@ -2,6 +2,9 @@ using Bootstrap;
 using System.Linq;
 using NUnit.Framework;
 using Portfolio;
+using Input;
+using Player;
+using UnityEngine;
 
 public class GalleryBootstrapTests
 {
@@ -43,5 +46,25 @@ public class GalleryBootstrapTests
         CollectionAssert.Contains(exhibits.Select(exhibit => exhibit.Title), "Player 1 Portfolio");
         CollectionAssert.Contains(exhibits.Select(exhibit => exhibit.Title), "Skill Wall");
         CollectionAssert.Contains(exhibits.Select(exhibit => exhibit.Title), "Contact Gate");
+    }
+
+    [Test]
+    public void CreateRuntimePlayerBuildsRequired2DComponents()
+    {
+        var player = GalleryBootstrap.CreateRuntimePlayer();
+
+        try
+        {
+            Assert.IsNotNull(player);
+            Assert.IsNotNull(player.GetComponent<BoxCollider2D>());
+            Assert.IsNotNull(player.GetComponent<Rigidbody2D>());
+            Assert.IsNotNull(player.GetComponent<PlayerController>());
+            Assert.IsNotNull(player.GetComponent<PlayerInputReader>());
+            Assert.IsNotNull(player.GetComponent<InteractionSystem>());
+        }
+        finally
+        {
+            Object.DestroyImmediate(player);
+        }
     }
 }

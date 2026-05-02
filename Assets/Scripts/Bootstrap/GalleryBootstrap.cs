@@ -26,7 +26,7 @@ namespace Bootstrap
 
         private void Start()
         {
-            var player = CreatePlayer();
+            var player = CreateRuntimePlayer();
             CreateGround();
             CreateCamera(player.transform);
             var panel = CreatePortfolioPanel();
@@ -103,14 +103,15 @@ namespace Bootstrap
             return title.Trim().ToLowerInvariant().Replace(" ", "-");
         }
 
-        private static GameObject CreatePlayer()
+        public static GameObject CreateRuntimePlayer()
         {
-            var player = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            player.name = "Player";
-            player.transform.position = new Vector3(-8f, 1f, 0f);
-            player.transform.localScale = new Vector3(0.8f, 1.2f, 1f);
-            Destroy(player.GetComponent<BoxCollider>());
-            player.AddComponent<BoxCollider2D>();
+            var player = CreateBlock(
+                "Player",
+                new Vector3(-8f, 1f, 0f),
+                new Vector3(0.8f, 1.2f, 1f),
+                new Color(0.95f, 0.92f, 0.78f, 1f),
+                true,
+                4);
             var body = player.AddComponent<Rigidbody2D>();
             body.freezeRotation = true;
             var controller = player.AddComponent<PlayerController>();
@@ -122,18 +123,13 @@ namespace Bootstrap
 
         private static void CreateGround()
         {
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ground.name = "Gallery Ground";
-            ground.transform.position = new Vector3(0f, -0.1f, 0f);
-            ground.transform.localScale = new Vector3(34f, 0.2f, 1f);
-            var renderer = ground.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material.color = new Color(0.16f, 0.17f, 0.18f, 1f);
-            }
-
-            Destroy(ground.GetComponent<BoxCollider>());
-            ground.AddComponent<BoxCollider2D>();
+            var ground = CreateBlock(
+                "Gallery Ground",
+                new Vector3(0f, -0.1f, 0f),
+                new Vector3(34f, 0.2f, 1f),
+                new Color(0.16f, 0.17f, 0.18f, 1f),
+                true,
+                0);
             var body = ground.AddComponent<Rigidbody2D>();
             body.bodyType = RigidbodyType2D.Static;
         }
@@ -261,18 +257,13 @@ namespace Bootstrap
 
         private static void CreateExhibit(ExhibitDefinition definition)
         {
-            var exhibitObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            exhibitObject.name = $"{definition.Category} Exhibit";
-            exhibitObject.transform.position = definition.Position;
-            exhibitObject.transform.localScale = new Vector3(1f, 1.5f, 1f);
-            var renderer = exhibitObject.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material.color = definition.Color;
-            }
-
-            Destroy(exhibitObject.GetComponent<BoxCollider>());
-            exhibitObject.AddComponent<BoxCollider2D>();
+            var exhibitObject = CreateBlock(
+                $"{definition.Category} Exhibit",
+                definition.Position,
+                new Vector3(1f, 1.5f, 1f),
+                definition.Color,
+                true,
+                2);
             var exhibit = exhibitObject.AddComponent<InteractableExhibit>();
             exhibit.SetData(CreateDraftExhibitData(
                 definition.Category,
@@ -287,20 +278,51 @@ namespace Bootstrap
 
         private static GameObject CreateHighlight(Transform parent)
         {
-            var highlight = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            highlight.name = "Focus Highlight";
+            var highlight = CreateBlock(
+                "Focus Highlight",
+                Vector3.zero,
+                new Vector3(1.18f, 1.12f, 0.1f),
+                new Color(1f, 0.82f, 0.24f, 1f),
+                false,
+                1);
             highlight.transform.SetParent(parent, false);
             highlight.transform.localPosition = new Vector3(0f, 0f, -0.08f);
-            highlight.transform.localScale = new Vector3(1.18f, 1.12f, 0.1f);
-            var renderer = highlight.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material.color = new Color(1f, 0.82f, 0.24f, 1f);
-            }
-
-            Destroy(highlight.GetComponent<BoxCollider>());
             highlight.SetActive(false);
             return highlight;
+        }
+
+        private static GameObject CreateBlock(
+            string name,
+            Vector3 position,
+            Vector3 scale,
+            Color color,
+            bool includeCollider,
+            int sortingOrder)
+        {
+            var block = new GameObject(name);
+            block.transform.position = position;
+            block.transform.localScale = scale;
+
+            var renderer = block.AddComponent<SpriteRenderer>();
+            renderer.sprite = CreateBlockSprite();
+            renderer.color = color;
+            renderer.sortingOrder = sortingOrder;
+
+            if (includeCollider)
+            {
+                block.AddComponent<BoxCollider2D>();
+            }
+
+            return block;
+        }
+
+        private static Sprite CreateBlockSprite()
+        {
+            return Sprite.Create(
+                Texture2D.whiteTexture,
+                new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
+                new Vector2(0.5f, 0.5f),
+                1f);
         }
 
         private static void CreateWorldLabel(Transform parent, string category, string title)
