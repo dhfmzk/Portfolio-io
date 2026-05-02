@@ -33,7 +33,7 @@ namespace Debug
         {
             this.canvasSizeText.text = this.mainCanvas != null ? 
                 $"CanvasSize: {this.mainCanvas.rect.width} x {this.mainCanvas.rect.height}" : 
-                $"CanvasSize: U R FUCKED MAIN IS NULL";
+                "CanvasSize: Main canvas is not assigned";
         }
         
         private void UpdateFPS()
@@ -46,8 +46,9 @@ namespace Debug
 
             // 평균 시간으로 FPS 계산
             var totalTime = this._timeQueue.Sum();
-            var averageTime = totalTime / this.samplingLength;
-            var fps = 1.0f / averageTime;
+            var sampleCount = Mathf.Max(1, this._timeQueue.Count);
+            var averageTime = totalTime / sampleCount;
+            var fps = averageTime > 0f ? 1.0f / averageTime : 0f;
 
             this.framePerSecondText.color = fps switch
             {
