@@ -32,6 +32,17 @@ public class PortfolioPanelViewModelTests
         Assert.AreEqual(0, viewModel.Links.Length);
     }
 
+    [Test]
+    public void StackSummaryJoinsTagsForCompactDisplay()
+    {
+        var data = UnityEngine.ScriptableObject.CreateInstance<PortfolioExhibitData>();
+        data.StackTags = new[] { "Unity", "C#", "WebGL" };
+
+        var viewModel = PortfolioPanelViewModel.FromData(data);
+
+        Assert.AreEqual("Unity / C# / WebGL", viewModel.StackSummary);
+    }
+
     private static PortfolioExhibitData CreateExhibit()
     {
         var data = UnityEngine.ScriptableObject.CreateInstance<PortfolioExhibitData>();

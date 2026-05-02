@@ -12,6 +12,7 @@ namespace Portfolio
         public readonly string Body;
         public readonly string[] StackTags;
         public readonly PortfolioLink[] Links;
+        public string StackSummary => StackTags.Length == 0 ? string.Empty : string.Join(" / ", StackTags);
 
         private PortfolioPanelViewModel(
             string id,
