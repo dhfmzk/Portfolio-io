@@ -117,6 +117,7 @@ namespace Bootstrap
             var controller = player.AddComponent<PlayerController>();
             var input = player.AddComponent<PlayerInputReader>();
             var interaction = player.AddComponent<InteractionSystem>();
+            player.AddComponent<PlayerSpriteAnimator>();
             interaction.Configure(player.transform, input, controller);
             return player;
         }

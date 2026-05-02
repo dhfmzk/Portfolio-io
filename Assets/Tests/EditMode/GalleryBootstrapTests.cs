@@ -60,6 +60,7 @@ public class GalleryBootstrapTests
             Assert.IsNotNull(player.GetComponent<Rigidbody2D>());
             Assert.IsNotNull(player.GetComponent<PlayerController>());
             Assert.IsNotNull(player.GetComponent<PlayerInputReader>());
+            Assert.IsNotNull(player.GetComponent<PlayerSpriteAnimator>());
             Assert.IsNotNull(player.GetComponent<InteractionSystem>());
         }
         finally
