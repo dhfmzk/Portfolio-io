@@ -181,9 +181,45 @@ namespace Bootstrap
             var subtitle = CreateText(panelObject.transform, "Subtitle", new Vector2(0f, 62f), 20, new Vector2(620f, 34f));
             var body = CreateText(panelObject.transform, "Body", new Vector2(0f, -18f), 18, new Vector2(620f, 120f));
             var stack = CreateText(panelObject.transform, "Stack", new Vector2(0f, -112f), 16, new Vector2(620f, 30f));
-            var links = CreateText(panelObject.transform, "Links", new Vector2(0f, -148f), 15, new Vector2(620f, 28f));
-            controller.Configure(panelObject, category, title, subtitle, body, stack, links);
+            var links = CreateText(panelObject.transform, "Links", new Vector2(0f, -138f), 15, new Vector2(620f, 24f));
+            var linkButtonRoot = CreateLinkButtonRoot(panelObject.transform);
+            var linkButtonTemplate = CreateLinkButtonTemplate(linkButtonRoot);
+            controller.Configure(panelObject, category, title, subtitle, body, stack, links, linkButtonRoot, linkButtonTemplate);
             return controller;
+        }
+
+        private static Transform CreateLinkButtonRoot(Transform parent)
+        {
+            var rootObject = new GameObject("Link Buttons");
+            rootObject.transform.SetParent(parent, false);
+            var rect = rootObject.AddComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(620f, 34f);
+            rect.anchoredPosition = new Vector2(0f, -168f);
+            var layout = rootObject.AddComponent<HorizontalLayoutGroup>();
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlHeight = false;
+            layout.childControlWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.spacing = 12f;
+            return rootObject.transform;
+        }
+
+        private static Button CreateLinkButtonTemplate(Transform parent)
+        {
+            var buttonObject = new GameObject("Link Button Template");
+            buttonObject.transform.SetParent(parent, false);
+            var image = buttonObject.AddComponent<Image>();
+            image.color = new Color(0.86f, 0.82f, 0.62f, 1f);
+            var button = buttonObject.AddComponent<Button>();
+            var rect = buttonObject.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(160f, 30f);
+
+            var label = CreateText(buttonObject.transform, "Label", Vector2.zero, 14, new Vector2(150f, 24f));
+            label.color = new Color(0.05f, 0.05f, 0.06f, 1f);
+
+            buttonObject.SetActive(false);
+            return button;
         }
 
         private static InteractionPromptUI CreateInteractionPrompt()
