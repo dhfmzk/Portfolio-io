@@ -10,6 +10,7 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
+/[Tt]est[Rr]esults/
 
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
@@ -26,6 +27,9 @@
 
 # Visual Studio cache directory
 .vs/
+
+# Visual Studio Code local settings
+.vscode/
 
 # Gradle cache directory
 .gradle/
