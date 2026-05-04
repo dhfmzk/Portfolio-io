@@ -5,8 +5,10 @@ namespace Player
     [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerController : MonoBehaviour
     {
+        private const float DefaultJumpVelocity = 5.5f;
+
         [SerializeField] private float moveSpeed = 6f;
-        [SerializeField] private float jumpVelocity = 9f;
+        [SerializeField] private float jumpVelocity = DefaultJumpVelocity;
         [SerializeField] private Transform groundCheck;
         [SerializeField] private float groundCheckRadius = 0.12f;
         [SerializeField] private LayerMask groundMask = ~0;

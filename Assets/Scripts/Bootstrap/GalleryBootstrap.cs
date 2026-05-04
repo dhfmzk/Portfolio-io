@@ -7,6 +7,7 @@ using System.Linq;
 using TMPro;
 using UI;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Bootstrap
@@ -26,11 +27,15 @@ namespace Bootstrap
 
         private void Start()
         {
+            PrepareSceneForRuntimeBootstrap();
             var player = CreateRuntimePlayer();
+            CreateBackdrop();
             CreateGround();
             CreateCamera(player.transform);
+            EnsureEventSystem();
             var panel = CreatePortfolioPanel();
-            var prompt = CreateInteractionPrompt();
+            var prompt = CreateRuntimeInteractionPrompt();
+            CreateRuntimeControlIndicator(player.GetComponent<PlayerInputReader>());
 
             var interaction = player.GetComponent<InteractionSystem>();
             interaction.ExhibitOpened += panel.Show;
@@ -103,23 +108,69 @@ namespace Bootstrap
             return title.Trim().ToLowerInvariant().Replace(" ", "-");
         }
 
+        public static void PrepareSceneForRuntimeBootstrap()
+        {
+            foreach (var canvas in FindObjectsOfType<Canvas>())
+            {
+                if (canvas == null)
+                {
+                    continue;
+                }
+
+                var canvasObject = canvas.gameObject;
+                if (canvasObject.name == "Canvas")
+                {
+                    canvasObject.SetActive(false);
+                }
+            }
+        }
+
         public static GameObject CreateRuntimePlayer()
         {
             var player = CreateBlock(
                 "Player",
-                new Vector3(-8f, 1f, 0f),
-                new Vector3(0.8f, 1.2f, 1f),
+                new Vector3(-11.5f, 0f, 0f),
+                Vector3.one,
                 new Color(0.95f, 0.92f, 0.78f, 1f),
                 true,
                 4);
+            var collider = player.GetComponent<BoxCollider2D>();
+            collider.offset = new Vector2(0f, 0.55f);
+            collider.size = new Vector2(0.55f, 1.1f);
             var body = player.AddComponent<Rigidbody2D>();
             body.freezeRotation = true;
+            body.gravityScale = 1.5f;
             var controller = player.AddComponent<PlayerController>();
             var input = player.AddComponent<PlayerInputReader>();
             var interaction = player.AddComponent<InteractionSystem>();
             player.AddComponent<PlayerSpriteAnimator>();
             interaction.Configure(player.transform, input, controller);
             return player;
+        }
+
+        private static void CreateBackdrop()
+        {
+            CreateBlock(
+                "Gallery Backdrop",
+                new Vector3(1.25f, 2.8f, 0f),
+                new Vector3(42f, 9f, 1f),
+                new Color(0.07f, 0.1f, 0.11f, 1f),
+                false,
+                -30);
+            CreateBlock(
+                "Gallery Floor Fill",
+                new Vector3(1.25f, -0.56f, 0f),
+                new Vector3(42f, 0.9f, 1f),
+                new Color(0.2f, 0.24f, 0.24f, 1f),
+                false,
+                -20);
+            CreateBlock(
+                "Gallery Floor Accent",
+                new Vector3(1.25f, -0.04f, 0f),
+                new Vector3(42f, 0.08f, 1f),
+                new Color(0.82f, 0.73f, 0.48f, 1f),
+                false,
+                1);
         }
 
         private static void CreateGround()
@@ -146,10 +197,25 @@ namespace Bootstrap
             }
 
             camera.orthographic = true;
-            camera.orthographicSize = 4.5f;
-            camera.transform.position = new Vector3(target.position.x, 1.5f, -10f);
+            camera.orthographicSize = 4f;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.07f, 0.1f, 0.11f, 1f);
+            camera.rect = new Rect(0f, 0f, 1f, 1f);
+            camera.transform.position = new Vector3(target.position.x, 1.3f, -10f);
             var follow = camera.gameObject.GetComponent<CameraFollow>() ?? camera.gameObject.AddComponent<CameraFollow>();
             follow.SetTarget(target);
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (FindObjectOfType<EventSystem>() != null)
+            {
+                return;
+            }
+
+            var eventSystemObject = new GameObject("EventSystem");
+            eventSystemObject.AddComponent<EventSystem>();
+            eventSystemObject.AddComponent<StandaloneInputModule>();
         }
 
         private static PortfolioPanelController CreatePortfolioPanel()
@@ -165,7 +231,7 @@ namespace Bootstrap
             var panelObject = new GameObject("Portfolio Panel");
             panelObject.transform.SetParent(canvasObject.transform, false);
             var image = panelObject.AddComponent<Image>();
-            image.color = new Color(0.05f, 0.05f, 0.06f, 0.94f);
+            image.color = new Color(0.05f, 0.05f, 0.06f, 0.99f);
             var rect = panelObject.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -219,7 +285,7 @@ namespace Bootstrap
             return button;
         }
 
-        private static InteractionPromptUI CreateInteractionPrompt()
+        public static InteractionPromptUI CreateRuntimeInteractionPrompt()
         {
             var canvasObject = new GameObject("Interaction Prompt Canvas");
             var canvas = canvasObject.AddComponent<Canvas>();
@@ -228,12 +294,95 @@ namespace Bootstrap
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280f, 720f);
 
-            var text = CreateText(canvasObject.transform, "Prompt", new Vector2(0f, -285f), 20, new Vector2(520f, 42f));
+            var text = CreateText(canvasObject.transform, "Prompt", new Vector2(0f, 86f), 18, new Vector2(520f, 34f));
+            var textRect = text.rectTransform;
+            textRect.anchorMin = new Vector2(0.5f, 0f);
+            textRect.anchorMax = new Vector2(0.5f, 0f);
+            textRect.pivot = new Vector2(0.5f, 0f);
             text.color = new Color(0.95f, 0.92f, 0.78f, 1f);
 
             var prompt = canvasObject.AddComponent<InteractionPromptUI>();
             prompt.Configure(text);
             return prompt;
+        }
+
+        public static GameObject CreateRuntimeControlIndicator(PlayerInputReader inputReader = null)
+        {
+            var canvasObject = new GameObject("Control Hint Canvas");
+            var canvas = canvasObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObject.AddComponent<GraphicRaycaster>();
+            var scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1280f, 720f);
+
+            var hintRoot = new GameObject("Control Hints");
+            hintRoot.transform.SetParent(canvasObject.transform, false);
+            var rect = hintRoot.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(360f, 42f);
+            rect.anchoredPosition = new Vector2(0f, 28f);
+
+            var layout = hintRoot.AddComponent<HorizontalLayoutGroup>();
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlHeight = false;
+            layout.childControlWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.spacing = 8f;
+
+            var normalSprite = Resources.Load<Sprite>("BUTTON_BASE_UP");
+            var pressedSprite = Resources.Load<Sprite>("BUTTON_BASE_DOWN");
+            var leftKey = CreateControlKey(hintRoot.transform, "Left", "A", new Vector2(64f, 27f), normalSprite, inputReader, VirtualControlAction.Left);
+            var rightKey = CreateControlKey(hintRoot.transform, "Right", "D", new Vector2(64f, 27f), normalSprite, inputReader, VirtualControlAction.Right);
+            var jumpKey = CreateControlKey(hintRoot.transform, "Jump", "Space", new Vector2(72f, 27f), normalSprite, inputReader, VirtualControlAction.Jump);
+            var interactKey = CreateControlKey(hintRoot.transform, "Interact", "E", new Vector2(64f, 27f), normalSprite, inputReader, VirtualControlAction.Interact);
+
+            var indicator = canvasObject.AddComponent<ControlIndicatorUI>();
+            indicator.Configure(
+                leftKey.Label,
+                rightKey.Label,
+                jumpKey.Label,
+                interactKey.Label,
+                leftKey.Image,
+                rightKey.Image,
+                jumpKey.Image,
+                interactKey.Image,
+                normalSprite,
+                pressedSprite);
+            indicator.SetInputReader(inputReader);
+            return canvasObject;
+        }
+
+        private static ControlKeyElements CreateControlKey(
+            Transform parent,
+            string name,
+            string label,
+            Vector2 size,
+            Sprite keySprite,
+            PlayerInputReader inputReader,
+            VirtualControlAction action)
+        {
+            var keyObject = new GameObject(name);
+            keyObject.transform.SetParent(parent, false);
+            var image = keyObject.AddComponent<Image>();
+            image.sprite = keySprite;
+            image.type = Image.Type.Sliced;
+            image.color = Color.white;
+            image.raycastTarget = true;
+            var rect = keyObject.GetComponent<RectTransform>();
+            rect.sizeDelta = size;
+
+            var text = CreateText(keyObject.transform, "Label", Vector2.zero, 14, new Vector2(size.x - 8f, size.y - 4f));
+            text.text = label;
+            text.fontStyle = FontStyles.Bold;
+            text.color = Color.white;
+            text.raycastTarget = false;
+            var virtualButton = keyObject.AddComponent<VirtualControlButton>();
+            virtualButton.Configure(inputReader, action);
+            return new ControlKeyElements(image, text);
         }
 
         private static TextMeshProUGUI CreateText(
@@ -261,9 +410,9 @@ namespace Bootstrap
             var exhibitObject = CreateBlock(
                 $"{definition.Category} Exhibit",
                 definition.Position,
-                new Vector3(1f, 1.5f, 1f),
+                new Vector3(0.86f, 1.08f, 1f),
                 definition.Color,
-                true,
+                false,
                 2);
             var exhibit = exhibitObject.AddComponent<InteractableExhibit>();
             exhibit.SetData(CreateDraftExhibitData(
@@ -319,11 +468,13 @@ namespace Bootstrap
 
         private static Sprite CreateBlockSprite()
         {
+            var texture = Texture2D.whiteTexture;
+            var pixelsPerUnit = Mathf.Max(texture.width, texture.height);
             return Sprite.Create(
-                Texture2D.whiteTexture,
-                new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
+                texture,
+                new Rect(0f, 0f, texture.width, texture.height),
                 new Vector2(0.5f, 0.5f),
-                1f);
+                pixelsPerUnit);
         }
 
         private static void CreateWorldLabel(Transform parent, string category, string title)
@@ -445,6 +596,18 @@ namespace Bootstrap
                 StackTags = stackTags;
                 Links = links;
                 Color = color;
+            }
+        }
+
+        private readonly struct ControlKeyElements
+        {
+            public readonly Image Image;
+            public readonly TextMeshProUGUI Label;
+
+            public ControlKeyElements(Image image, TextMeshProUGUI label)
+            {
+                Image = image;
+                Label = label;
             }
         }
     }

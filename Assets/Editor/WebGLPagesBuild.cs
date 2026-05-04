@@ -46,6 +46,7 @@ namespace Portfolio.Build
                 throw new Exception($"WebGL build failed: {report.summary.result}");
             }
 
+            ApplyCacheBustShell(outputPath, DateTime.UtcNow.ToString("yyyyMMddHHmmss"));
             UnityEngine.Debug.Log($"WebGL GitHub Pages build completed: {outputPath}");
         }
 
@@ -54,7 +55,7 @@ namespace Portfolio.Build
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL);
 
             PlayerSettings.WebGL.template = WebGLTemplate;
-            PlayerSettings.WebGL.dataCaching = true;
+            PlayerSettings.WebGL.dataCaching = false;
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
             PlayerSettings.WebGL.decompressionFallback = false;
             PlayerSettings.WebGL.nameFilesAsHashes = false;
@@ -97,6 +98,38 @@ namespace Portfolio.Build
         private static void EnsureNoJekyll(string outputPath)
         {
             File.WriteAllText(Path.Combine(outputPath, ".nojekyll"), string.Empty);
+        }
+
+        private static void ApplyCacheBustShell(string outputPath, string buildVersion)
+        {
+            var indexPath = Path.Combine(outputPath, "index.html");
+            var index = File.ReadAllText(indexPath);
+            index = index.Replace(
+                "var buildUrl = \"Build\";\n      var loaderUrl = buildUrl + \"/docs.loader.js\";",
+                $"var buildVersion = \"{buildVersion}\";\n      var buildUrl = \"Build\";\n      var loaderUrl = buildUrl + \"/docs.loader.js?v=\" + buildVersion;");
+            index = index.Replace(
+                "dataUrl: buildUrl + \"/docs.data\",\n        frameworkUrl: buildUrl + \"/docs.framework.js\",\n        codeUrl: buildUrl + \"/docs.wasm\",",
+                "dataUrl: buildUrl + \"/docs.data?v=\" + buildVersion,\n        frameworkUrl: buildUrl + \"/docs.framework.js?v=\" + buildVersion,\n        codeUrl: buildUrl + \"/docs.wasm?v=\" + buildVersion,");
+            index = index.Replace(
+                "productVersion: \"1.0\",",
+                "productVersion: buildVersion,");
+            index = index.Replace(
+                "window.addEventListener(\"load\", function () {\n        if (\"serviceWorker\" in navigator) {\n          navigator.serviceWorker.register(\"ServiceWorker.js\");\n        }\n      });",
+                "window.addEventListener(\"load\", function () {\n        if (\"serviceWorker\" in navigator) {\n          navigator.serviceWorker.getRegistrations()\n            .then((registrations) => registrations.forEach((registration) => registration.unregister()));\n        }\n        if (\"caches\" in window) {\n          caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))));\n        }\n      });");
+            File.WriteAllText(indexPath, index);
+
+            var serviceWorkerPath = Path.Combine(outputPath, "ServiceWorker.js");
+            File.WriteAllText(
+                serviceWorkerPath,
+                "self.addEventListener('install', (event) => { self.skipWaiting(); });\n" +
+                "self.addEventListener('activate', (event) => {\n" +
+                "  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))).then(() => self.clients.claim()));\n" +
+                "});\n" +
+                "self.addEventListener('fetch', (event) => {\n" +
+                "  if (event.request.method === 'GET') {\n" +
+                "    event.respondWith(fetch(event.request));\n" +
+                "  }\n" +
+                "});\n");
         }
     }
 }

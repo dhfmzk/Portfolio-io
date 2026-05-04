@@ -12,7 +12,7 @@ namespace Portfolio
         [SerializeField] private Transform player;
         [SerializeField] private PlayerInputReader inputReader;
         [SerializeField] private PlayerController playerController;
-        [SerializeField] private float interactionRadius = 2.25f;
+        [SerializeField] private float interactionRadius = 2.8f;
 
         private InteractableExhibit _current;
 

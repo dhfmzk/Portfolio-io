@@ -22,7 +22,11 @@
     <script>
       window.addEventListener("load", function () {
         if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.register("ServiceWorker.js");
+          navigator.serviceWorker.getRegistrations()
+            .then((registrations) => registrations.forEach((registration) => registration.unregister()));
+        }
+        if ("caches" in window) {
+          caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))));
         }
       });
 
@@ -56,16 +60,17 @@
         updateBannerVisibility();
       }
 
+      var buildVersion = "20260504105047";
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/docs.loader.js";
+      var loaderUrl = buildUrl + "/docs.loader.js?v=" + buildVersion;
       var config = {
-        dataUrl: buildUrl + "/docs.data",
-        frameworkUrl: buildUrl + "/docs.framework.js",
-        codeUrl: buildUrl + "/docs.wasm",
+        dataUrl: buildUrl + "/docs.data?v=" + buildVersion,
+        frameworkUrl: buildUrl + "/docs.framework.js?v=" + buildVersion,
+        codeUrl: buildUrl + "/docs.wasm?v=" + buildVersion,
         streamingAssetsUrl: "StreamingAssets",
         companyName: "DefaultCompany",
         productName: "Portfolio",
-        productVersion: "1.0",
+        productVersion: buildVersion,
         showBanner: unityShowBanner,
       };
 

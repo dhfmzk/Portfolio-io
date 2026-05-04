@@ -24,4 +24,28 @@ public class ControlIndicatorUITests
 
         Assert.AreEqual(inactive, resolved);
     }
+
+    [Test]
+    public void ResolveKeySpriteUsesPressedSpriteWhenPressed()
+    {
+        var normal = UnityEngine.Sprite.Create(
+            UnityEngine.Texture2D.whiteTexture,
+            new UnityEngine.Rect(0f, 0f, 1f, 1f),
+            new UnityEngine.Vector2(0.5f, 0.5f));
+        var pressed = UnityEngine.Sprite.Create(
+            UnityEngine.Texture2D.whiteTexture,
+            new UnityEngine.Rect(0f, 0f, 1f, 1f),
+            new UnityEngine.Vector2(0.5f, 0.5f));
+
+        try
+        {
+            Assert.AreEqual(pressed, ControlIndicatorUI.ResolveKeySprite(true, normal, pressed));
+            Assert.AreEqual(normal, ControlIndicatorUI.ResolveKeySprite(false, normal, pressed));
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(normal);
+            UnityEngine.Object.DestroyImmediate(pressed);
+        }
+    }
 }
