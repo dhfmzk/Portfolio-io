@@ -137,6 +137,9 @@ namespace Bootstrap
             var collider = player.GetComponent<BoxCollider2D>();
             collider.offset = new Vector2(0f, 0.55f);
             collider.size = new Vector2(0.55f, 1.1f);
+            var placeholderRenderer = player.GetComponent<SpriteRenderer>();
+            placeholderRenderer.enabled = false;
+            CreatePlayerVisual(player.transform, placeholderRenderer);
             var body = player.AddComponent<Rigidbody2D>();
             body.freezeRotation = true;
             body.gravityScale = 1.5f;
@@ -146,6 +149,19 @@ namespace Bootstrap
             player.AddComponent<PlayerSpriteAnimator>();
             interaction.Configure(player.transform, input, controller);
             return player;
+        }
+
+        private static void CreatePlayerVisual(Transform parent, SpriteRenderer placeholderRenderer)
+        {
+            var visual = new GameObject("Player Visual");
+            visual.transform.SetParent(parent, false);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localScale = Vector3.one;
+
+            var renderer = visual.AddComponent<SpriteRenderer>();
+            renderer.sprite = placeholderRenderer.sprite;
+            renderer.color = Color.white;
+            renderer.sortingOrder = placeholderRenderer.sortingOrder;
         }
 
         private static void CreateBackdrop()
@@ -322,7 +338,7 @@ namespace Bootstrap
             rect.anchorMin = new Vector2(0.5f, 0f);
             rect.anchorMax = new Vector2(0.5f, 0f);
             rect.pivot = new Vector2(0.5f, 0f);
-            rect.sizeDelta = new Vector2(360f, 42f);
+            rect.sizeDelta = new Vector2(320f, 42f);
             rect.anchoredPosition = new Vector2(0f, 28f);
 
             var layout = hintRoot.AddComponent<HorizontalLayoutGroup>();

@@ -1,4 +1,3 @@
-using Input;
 using UnityEngine;
 
 namespace Player
@@ -7,7 +6,7 @@ namespace Player
     {
         Idle = 0,
         Walk = 1,
-        Interact = 2
+        Jump = 2
     }
 
     [RequireComponent(typeof(SpriteRenderer))]
@@ -15,30 +14,36 @@ namespace Player
     public class PlayerSpriteAnimator : MonoBehaviour
     {
         private const string SpriteSheetResourcePath = "Characters/developer-spritesheet";
-        private const int Columns = 4;
-        private const int Rows = 3;
+        private const string VisualChildName = "Player Visual";
+        private const float DebugJumpPreviewHeight = 1.05f;
+        public const int AnimationColumns = 8;
+        public const int AnimationRows = 3;
         private const float PixelsPerUnit = 320f;
 
-        [SerializeField] private float idleFramesPerSecond = 4f;
+        [SerializeField] private float idleFramesPerSecond = 1.5f;
         [SerializeField] private float walkFramesPerSecond = 8f;
-        [SerializeField] private float interactFramesPerSecond = 8f;
-        [SerializeField] private float interactDuration = 0.45f;
+        [SerializeField] private float jumpFramesPerSecond = 8f;
 
         private SpriteRenderer _spriteRenderer;
+        private Transform _visualRoot;
+        private Vector3 _visualBaseLocalPosition;
+        private bool _canOffsetVisual;
         private Rigidbody2D _body;
-        private PlayerInputReader _inputReader;
+        private PlayerController _controller;
         private Sprite[] _frames;
         private float _stateTime;
-        private float _interactTimeRemaining;
         private PlayerSpriteAnimationState _state;
         private bool _hasDebugStateOverride;
         private PlayerSpriteAnimationState _debugStateOverride;
 
         private void Awake()
         {
-            _spriteRenderer = GetComponent<SpriteRenderer>();
+            _spriteRenderer = ResolveVisualRenderer();
+            _visualRoot = _spriteRenderer != null ? _spriteRenderer.transform : null;
+            _visualBaseLocalPosition = _visualRoot != null ? _visualRoot.localPosition : Vector3.zero;
+            _canOffsetVisual = _visualRoot != null && _visualRoot != transform;
             _body = GetComponent<Rigidbody2D>();
-            _inputReader = GetComponent<PlayerInputReader>();
+            _controller = GetComponent<PlayerController>();
             _hasDebugStateOverride = TryResolveDebugStateOverride(Application.absoluteURL, out _debugStateOverride);
             LoadFrames();
         }
@@ -50,22 +55,11 @@ namespace Player
                 return;
             }
 
-            if (!_hasDebugStateOverride &&
-                ((_inputReader != null && _inputReader.InteractionPressedThisFrame) ||
-                UnityEngine.Input.GetKeyDown(KeyCode.E)))
-            {
-                _interactTimeRemaining = interactDuration;
-            }
-
-            if (_interactTimeRemaining > 0f)
-            {
-                _interactTimeRemaining = Mathf.Max(0f, _interactTimeRemaining - Time.deltaTime);
-            }
-
             var horizontalSpeed = _body != null ? _body.velocity.x : 0f;
+            var grounded = _controller == null || _controller.Grounded;
             var nextState = _hasDebugStateOverride
                 ? _debugStateOverride
-                : ResolveState(horizontalSpeed, _interactTimeRemaining > 0f);
+                : ResolveState(horizontalSpeed, grounded);
             if (nextState != _state)
             {
                 _state = nextState;
@@ -85,9 +79,30 @@ namespace Player
                 _spriteRenderer.flipX = false;
             }
 
-            var frame = ResolveFrameColumn(_state, _stateTime, Columns, ResolveFramesPerSecond(_state));
-            _spriteRenderer.sprite = _frames[ResolveFrameIndex((int)_state, frame, Columns)];
+            var frame = ResolveFrameColumn(_state, _stateTime, AnimationColumns, ResolveFramesPerSecond(_state));
+            _spriteRenderer.sprite = _frames[ResolveFrameIndex((int)_state, frame, AnimationColumns)];
             _spriteRenderer.color = Color.white;
+            ApplyDebugPreviewOffset(frame);
+        }
+
+        private SpriteRenderer ResolveVisualRenderer()
+        {
+            var namedVisual = transform.Find(VisualChildName);
+            if (namedVisual != null && namedVisual.TryGetComponent<SpriteRenderer>(out var namedRenderer))
+            {
+                return namedRenderer;
+            }
+
+            var childRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+            foreach (var childRenderer in childRenderers)
+            {
+                if (childRenderer != null && childRenderer.transform != transform)
+                {
+                    return childRenderer;
+                }
+            }
+
+            return GetComponent<SpriteRenderer>();
         }
 
         private void LoadFrames()
@@ -100,7 +115,7 @@ namespace Player
 
             texture.filterMode = FilterMode.Point;
             texture.wrapMode = TextureWrapMode.Clamp;
-            _frames = CreateFrames(texture, Columns, Rows, PixelsPerUnit);
+            _frames = CreateFrames(texture, AnimationColumns, AnimationRows, PixelsPerUnit);
             if (_frames.Length > 0 && _spriteRenderer != null)
             {
                 _spriteRenderer.sprite = _frames[0];
@@ -108,11 +123,11 @@ namespace Player
             }
         }
 
-        public static PlayerSpriteAnimationState ResolveState(float horizontalSpeed, bool interactionActive)
+        public static PlayerSpriteAnimationState ResolveState(float horizontalSpeed, bool grounded)
         {
-            if (interactionActive)
+            if (!grounded)
             {
-                return PlayerSpriteAnimationState.Interact;
+                return PlayerSpriteAnimationState.Jump;
             }
 
             return Mathf.Abs(horizontalSpeed) > 0.05f
@@ -131,7 +146,30 @@ namespace Player
             int columns,
             float framesPerSecond)
         {
-            return Mathf.FloorToInt(stateTime * framesPerSecond) % columns;
+            var frame = Mathf.FloorToInt(stateTime * framesPerSecond);
+            return frame % columns;
+        }
+
+        public static Vector3 ResolveDebugPreviewOffset(
+            bool hasDebugStateOverride,
+            PlayerSpriteAnimationState state,
+            int frame,
+            int columns,
+            float maxHeight)
+        {
+            if (!hasDebugStateOverride || state != PlayerSpriteAnimationState.Jump || columns <= 1 || maxHeight <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            if (frame <= 0 || frame >= columns - 1)
+            {
+                return Vector3.zero;
+            }
+
+            var normalizedFrame = Mathf.Clamp01(frame / (columns - 1f));
+            var y = Mathf.Sin(normalizedFrame * Mathf.PI) * maxHeight;
+            return new Vector3(0f, y, 0f);
         }
 
         public static bool TryResolveDebugStateOverride(
@@ -180,9 +218,24 @@ namespace Player
             return state switch
             {
                 PlayerSpriteAnimationState.Walk => walkFramesPerSecond,
-                PlayerSpriteAnimationState.Interact => interactFramesPerSecond,
+                PlayerSpriteAnimationState.Jump => jumpFramesPerSecond,
                 _ => idleFramesPerSecond
             };
+        }
+
+        private void ApplyDebugPreviewOffset(int frame)
+        {
+            if (!_canOffsetVisual)
+            {
+                return;
+            }
+
+            _visualRoot.localPosition = _visualBaseLocalPosition + ResolveDebugPreviewOffset(
+                _hasDebugStateOverride,
+                _state,
+                frame,
+                AnimationColumns,
+                DebugJumpPreviewHeight);
         }
 
         public static Sprite[] CreateFrames(Texture2D texture, int columns, int rows, float pixelsPerUnit)

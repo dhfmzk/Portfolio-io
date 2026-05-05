@@ -18,6 +18,8 @@ namespace Player
         private bool _jumpRequested;
         private bool _movementPaused;
 
+        public bool Grounded => _body == null || IsGrounded();
+
         public void SetMoveInput(float moveInput)
         {
             _moveInput = Mathf.Clamp(moveInput, -1f, 1f);

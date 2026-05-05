@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -63,6 +64,12 @@ namespace Portfolio.Build
 
         private static string GetOutputPath()
         {
+            var overrideOutputPath = Environment.GetEnvironmentVariable("PORTFOLIO_WEBGL_OUTPUT_PATH");
+            if (!string.IsNullOrWhiteSpace(overrideOutputPath))
+            {
+                return Path.GetFullPath(overrideOutputPath);
+            }
+
             var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
             if (string.IsNullOrEmpty(projectRoot))
             {
@@ -105,11 +112,24 @@ namespace Portfolio.Build
             var indexPath = Path.Combine(outputPath, "index.html");
             var index = File.ReadAllText(indexPath);
             index = index.Replace(
-                "var buildUrl = \"Build\";\n      var loaderUrl = buildUrl + \"/docs.loader.js\";",
-                $"var buildVersion = \"{buildVersion}\";\n      var buildUrl = \"Build\";\n      var loaderUrl = buildUrl + \"/docs.loader.js?v=\" + buildVersion;");
-            index = index.Replace(
-                "dataUrl: buildUrl + \"/docs.data\",\n        frameworkUrl: buildUrl + \"/docs.framework.js\",\n        codeUrl: buildUrl + \"/docs.wasm\",",
-                "dataUrl: buildUrl + \"/docs.data?v=\" + buildVersion,\n        frameworkUrl: buildUrl + \"/docs.framework.js?v=\" + buildVersion,\n        codeUrl: buildUrl + \"/docs.wasm?v=\" + buildVersion,");
+                "var buildUrl = \"Build\";",
+                $"var buildVersion = \"{buildVersion}\";\n      var buildUrl = \"Build\";");
+            index = Regex.Replace(
+                index,
+                "var loaderUrl = buildUrl \\+ \"([^\"]+\\.loader\\.js)\";",
+                "var loaderUrl = buildUrl + \"$1?v=\" + buildVersion;");
+            index = Regex.Replace(
+                index,
+                "(dataUrl: buildUrl \\+ \"[^\"]+\\.data)\"",
+                "$1?v=\" + buildVersion");
+            index = Regex.Replace(
+                index,
+                "(frameworkUrl: buildUrl \\+ \"[^\"]+\\.framework\\.js)\"",
+                "$1?v=\" + buildVersion");
+            index = Regex.Replace(
+                index,
+                "(codeUrl: buildUrl \\+ \"[^\"]+\\.wasm)\"",
+                "$1?v=\" + buildVersion");
             index = index.Replace(
                 "productVersion: \"1.0\",",
                 "productVersion: buildVersion,");

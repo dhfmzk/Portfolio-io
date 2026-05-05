@@ -106,6 +106,28 @@ public class GalleryBootstrapTests
     }
 
     [Test]
+    public void CreateRuntimePlayerUsesChildVisualRenderer()
+    {
+        var player = GalleryBootstrap.CreateRuntimePlayer();
+
+        try
+        {
+            var rootRenderer = player.GetComponent<SpriteRenderer>();
+            var visual = player.transform.Find("Player Visual");
+
+            Assert.IsNotNull(rootRenderer);
+            Assert.IsFalse(rootRenderer.enabled);
+            Assert.IsNotNull(visual);
+            Assert.IsNotNull(visual.GetComponent<SpriteRenderer>());
+            Assert.AreEqual(Vector3.zero, visual.localPosition);
+        }
+        finally
+        {
+            Object.DestroyImmediate(player);
+        }
+    }
+
+    [Test]
     public void CreateBackdropPlacesFloorAccentBelowPlayerFeet()
     {
         typeof(GalleryBootstrap)
@@ -167,6 +189,9 @@ public class GalleryBootstrapTests
             Assert.IsNotNull(firstKeyImage);
             Assert.IsNotNull(firstKeyImage.sprite);
             Assert.AreEqual("BUTTON_BASE_UP", firstKeyImage.sprite.name);
+            Assert.IsNull(indicator.transform.Find("Control Hints/Sit"));
+            Assert.IsNotNull(indicator.transform.Find("Control Hints/Jump")?.GetComponent<Image>());
+            Assert.IsNotNull(indicator.transform.Find("Control Hints/Interact")?.GetComponent<Image>());
             Assert.IsNotNull(indicator.GetComponent<GraphicRaycaster>());
             Assert.IsNotNull(firstKeyImage.GetComponent<VirtualControlButton>());
             Assert.IsInstanceOf<IPointerClickHandler>(firstKeyImage.GetComponent<VirtualControlButton>());
